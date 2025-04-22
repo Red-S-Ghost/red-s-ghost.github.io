@@ -1373,13 +1373,15 @@ input, select, textarea {
 					letter-spacing: 0.2rem;
 					font-size: 0.8rem;
 					border-bottom: 0;
-					border: 1px solid transparent;
+					border: none;
+					text-decoration: none;
 					box-sizing: border-box;
 					transition: background-color 0.2s ease;
 				}
 
 					#header nav ul li a:hover {
 						background-color: rgba(255, 255, 255, 0.075);
+						text-decoration: underline;
 					}
 
 					#header nav ul li a:active {
