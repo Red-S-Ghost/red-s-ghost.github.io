@@ -781,7 +781,8 @@ input, select, textarea {
 		display: flex;
 		cursor: default;
 		list-style: none;
-		margin-left: -1rem;
+		justify-content: center;
+		margin-left: 0;
 		padding-left: 0;
 	}
 
