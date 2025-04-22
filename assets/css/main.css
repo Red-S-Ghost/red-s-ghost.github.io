@@ -782,7 +782,7 @@ input, select, textarea {
 		cursor: default;
 		list-style: none;
 		justify-content: center;
-		margin-left: 0;
+		margin-left: -1rem;
 		padding-left: 0;
 	}
 
