@@ -45,27 +45,37 @@ jobs:
           set -eu
           curl -L --fail --retry 3             "https://downloads.sourceforge.net/mueller-dict/mueller-dict-3.1.1.tar.gz"             -o /tmp/mueller-dict.tar.gz
           echo "6aebd3fdbe8f921e0011630d35137caf523fd40a  /tmp/mueller-dict.tar.gz" | sha1sum -c -
-          tar -tzf /tmp/mueller-dict.tar.gz | sed -n '1,100p'
           mkdir -p /tmp/mueller-inspect
           tar -xzf /tmp/mueller-dict.tar.gz -C /tmp/mueller-inspect
           python3 - <<'PY'
           import gzip
           import pathlib
-          import re
+
+          alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+          digits = {value: index for index, value in enumerate(alphabet)}
+
+          def decode_number(value):
+              result = 0
+              for character in value:
+                  result = result * 64 + digits[character]
+              return result
 
           root = pathlib.Path("/tmp/mueller-inspect")
-          for path in sorted(root.rglob("*.dict.dz")):
-              print(f"DICTIONARY {path.name} {path.stat().st_size}")
-              with gzip.open(path, "rt", encoding="utf-8", errors="replace") as stream:
-                  data = stream.read()
-              for headword in ("go", "get", "light"):
-                  match = re.search(
-                      rf"(?m)^{re.escape(headword)}\r?\n((?:[ \t].*(?:\r?\n|$)){{1,12}})",
-                      data,
-                  )
-                  if match:
-                      print(f"SAMPLE {headword}:")
-                      print(match.group(0)[:2000])
+          data_path = next(root.rglob("mueller-base.dict.dz"))
+          index_path = next(root.rglob("mueller-base.index"))
+          with gzip.open(data_path, "rb") as stream:
+              data = stream.read()
+
+          wanted = {"go", "get", "light", "make", "run"}
+          for raw_line in index_path.read_bytes().splitlines():
+              parts = raw_line.decode("utf-8", errors="replace").split("\t")
+              if len(parts) < 3 or parts[0].casefold() not in wanted:
+                  continue
+              offset, size = decode_number(parts[1]), decode_number(parts[2])
+              payload = data[offset:offset + size]
+              print("INDEX", parts[0], parts[1], parts[2], offset, size)
+              for encoding in ("utf-8", "koi8-r", "cp1251"):
+                  print(encoding, repr(payload.decode(encoding, errors="replace")[:3000]))
           PY
 
       - name: Prepare offline vocabulary
