@@ -22,29 +22,34 @@ final class WidgetRenderer {
             return;
         }
 
+        boolean englishFirst = Prefs.englishFirst(context);
         Word word = advance
-                ? WordRepository.next(context, Prefs.CHANNEL_WIDGET)
-                : WordRepository.current(context, Prefs.CHANNEL_WIDGET);
+                ? WordRepository.next(context, Prefs.CHANNEL_WIDGET, englishFirst)
+                : WordRepository.current(context, Prefs.CHANNEL_WIDGET, englishFirst);
         for (int id : ids) {
-            manager.updateAppWidget(id, remoteViews(context, word));
+            manager.updateAppWidget(id, remoteViews(context, word, englishFirst));
         }
     }
 
     static void updateOne(Context context, AppWidgetManager manager, int id) {
-        Word word = WordRepository.current(context, Prefs.CHANNEL_WIDGET);
-        manager.updateAppWidget(id, remoteViews(context, word));
+        boolean englishFirst = Prefs.englishFirst(context);
+        Word word = WordRepository.current(context, Prefs.CHANNEL_WIDGET, englishFirst);
+        manager.updateAppWidget(id, remoteViews(context, word, englishFirst));
     }
 
-    private static RemoteViews remoteViews(Context context, Word word) {
-        boolean englishFirst = Prefs.englishFirst(context);
+    private static RemoteViews remoteViews(
+            Context context,
+            Word word,
+            boolean englishFirst
+    ) {
         int baseColor = Prefs.widgetColor(context);
         int opacity = Prefs.widgetOpacity(context);
         int textColor = readableTextColor(baseColor);
 
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_word);
         views.setImageViewBitmap(R.id.widget_background, background(baseColor, opacity));
-        views.setTextViewText(R.id.widget_primary, word.primary(englishFirst));
-        views.setTextViewText(R.id.widget_secondary, word.secondary(englishFirst));
+        views.setTextViewText(R.id.widget_primary, word.source);
+        views.setTextViewText(R.id.widget_secondary, word.translation);
         views.setTextViewText(R.id.widget_direction, englishFirst ? "EN → RU" : "RU → EN");
         views.setTextColor(R.id.widget_primary, textColor);
         views.setTextColor(R.id.widget_secondary, textColor);
@@ -59,7 +64,7 @@ final class WidgetRenderer {
         views.setOnClickPendingIntent(R.id.widget_root, nextWord);
         views.setContentDescription(
                 R.id.widget_root,
-                word.primary(englishFirst) + ". " + word.secondary(englishFirst)
+                word.source + ". " + word.translation
         );
         return views;
     }

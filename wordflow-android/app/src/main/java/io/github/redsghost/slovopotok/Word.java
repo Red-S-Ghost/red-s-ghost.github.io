@@ -1,19 +1,11 @@
 package io.github.redsghost.slovopotok;
 
 final class Word {
-    final String russian;
-    final String english;
+    final String source;
+    final String translation;
 
-    Word(String russian, String english) {
-        this.russian = russian;
-        this.english = english;
-    }
-
-    String primary(boolean englishFirst) {
-        return englishFirst ? english : russian;
-    }
-
-    String secondary(boolean englishFirst) {
-        return englishFirst ? russian : english;
+    Word(String source, String translation) {
+        this.source = source;
+        this.translation = translation;
     }
 }

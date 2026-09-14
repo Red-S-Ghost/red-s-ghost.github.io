@@ -35,10 +35,10 @@ final class NotificationHelper {
         }
         ensureChannel(manager);
 
-        Word word = advance
-                ? WordRepository.next(context, Prefs.CHANNEL_NOTIFICATION)
-                : WordRepository.current(context, Prefs.CHANNEL_NOTIFICATION);
         boolean englishFirst = Prefs.englishFirst(context);
+        Word word = advance
+                ? WordRepository.next(context, Prefs.CHANNEL_NOTIFICATION, englishFirst)
+                : WordRepository.current(context, Prefs.CHANNEL_NOTIFICATION, englishFirst);
 
         PendingIntent openApp = PendingIntent.getActivity(
                 context,
@@ -58,18 +58,20 @@ final class NotificationHelper {
         Notification notification = new Notification.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setColor(Color.rgb(103, 80, 164))
-                .setContentTitle(word.primary(englishFirst))
-                .setContentText(word.secondary(englishFirst))
-                .setStyle(new Notification.BigTextStyle().bigText(word.secondary(englishFirst)))
+                .setContentTitle(word.source)
+                .setContentText(word.translation)
+                .setStyle(new Notification.BigTextStyle().bigText(word.translation))
                 .setContentIntent(openApp)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
-
                 .setShowWhen(false)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setCategory(Notification.CATEGORY_REMINDER)
                 .addAction(new Notification.Action.Builder(
-                        R.drawable.ic_notification, "Следующее", nextWord).build())
+                        R.drawable.ic_notification,
+                        "Следующее",
+                        nextWord
+                ).build())
                 .build();
 
         try {

@@ -47,11 +47,20 @@ final class Prefs {
         return get(context).getBoolean(KEY_ENGLISH_FIRST, true);
     }
 
-    static int currentIndex(Context context, String channel) {
-        return get(context).getInt("current_index_" + channel, -1);
+    static int currentIndex(Context context, String channel, boolean englishFirst) {
+        return get(context).getInt(indexKey(channel, englishFirst), -1);
     }
 
-    static void setCurrentIndex(Context context, String channel, int index) {
-        get(context).edit().putInt("current_index_" + channel, index).apply();
+    static void setCurrentIndex(
+            Context context,
+            String channel,
+            boolean englishFirst,
+            int index
+    ) {
+        get(context).edit().putInt(indexKey(channel, englishFirst), index).apply();
+    }
+
+    private static String indexKey(String channel, boolean englishFirst) {
+        return "current_index_" + channel + (englishFirst ? "_en_ru" : "_ru_en");
     }
 }

@@ -13,81 +13,106 @@ import java.util.Random;
 final class WordRepository {
     private static final Object LOCK = new Object();
     private static final Random RANDOM = new Random();
-    private static volatile List<Word> cache;
+    private static volatile List<Word> enRuCache;
+    private static volatile List<Word> ruEnCache;
 
     private WordRepository() {
     }
 
-    static int count(Context context) {
-        return words(context).size();
+    static int count(Context context, boolean englishFirst) {
+        return words(context, englishFirst).size();
     }
 
-    static Word current(Context context, String channel) {
-        List<Word> all = words(context);
+    static Word current(Context context, String channel, boolean englishFirst) {
+        List<Word> all = words(context, englishFirst);
         synchronized (LOCK) {
-            int index = Prefs.currentIndex(context, channel);
+            int index = Prefs.currentIndex(context, channel, englishFirst);
             if (index < 0 || index >= all.size()) {
                 index = RANDOM.nextInt(all.size());
-                Prefs.setCurrentIndex(context, channel, index);
+                Prefs.setCurrentIndex(context, channel, englishFirst, index);
             }
             return all.get(index);
         }
     }
 
-    static Word next(Context context, String channel) {
-        List<Word> all = words(context);
+    static Word next(Context context, String channel, boolean englishFirst) {
+        List<Word> all = words(context, englishFirst);
         synchronized (LOCK) {
-            int previous = Prefs.currentIndex(context, channel);
+            int previous = Prefs.currentIndex(context, channel, englishFirst);
             int index = RANDOM.nextInt(all.size());
             if (all.size() > 1 && index == previous) {
                 index = (index + 1) % all.size();
             }
-            Prefs.setCurrentIndex(context, channel, index);
+            Prefs.setCurrentIndex(context, channel, englishFirst, index);
             return all.get(index);
         }
     }
 
-    private static List<Word> words(Context context) {
-        List<Word> local = cache;
+    private static List<Word> words(Context context, boolean englishFirst) {
+        List<Word> local = englishFirst ? enRuCache : ruEnCache;
         if (local != null) {
             return local;
         }
         synchronized (LOCK) {
-            if (cache != null) {
-                return cache;
-            }
-            List<Word> loaded = new ArrayList<>();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                    context.getAssets().open("words.csv"), StandardCharsets.UTF_8))) {
-                String line;
-                boolean header = true;
-                while ((line = reader.readLine()) != null) {
-                    if (header) {
-                        header = false;
-                        continue;
-                    }
-                    List<String> fields = parseCsv(line);
-                    if (fields.size() >= 2) {
-                        String russian = fields.get(0).trim();
-                        String english = fields.get(1).trim();
-                        if (!russian.isEmpty() && !english.isEmpty()) {
-                            loaded.add(new Word(russian, english));
-                        }
-                    }
-                }
-            } catch (Exception ignored) {
+            local = englishFirst ? enRuCache : ruEnCache;
+            if (local != null) {
+                return local;
             }
 
+            String filename = englishFirst ? "words_en_ru.csv" : "words_ru_en.csv";
+            List<Word> loaded = load(context, filename);
             if (loaded.isEmpty()) {
-                loaded.add(new Word("слово", "word"));
-                loaded.add(new Word("дружба", "friendship"));
-                loaded.add(new Word("свобода", "freedom"));
-                loaded.add(new Word("время", "time"));
-                loaded.add(new Word("свет", "light"));
+                if (englishFirst) {
+                    loaded.add(new Word("word", "слово"));
+                    loaded.add(new Word("friendship", "дружба"));
+                    loaded.add(new Word("freedom", "свобода"));
+                    loaded.add(new Word("time", "время"));
+                    loaded.add(new Word("light", "свет"));
+                } else {
+                    loaded.add(new Word("слово", "word"));
+                    loaded.add(new Word("дружба", "friendship"));
+                    loaded.add(new Word("свобода", "freedom"));
+                    loaded.add(new Word("время", "time"));
+                    loaded.add(new Word("свет", "light"));
+                }
             }
-            cache = Collections.unmodifiableList(loaded);
-            return cache;
+
+            local = Collections.unmodifiableList(loaded);
+            if (englishFirst) {
+                enRuCache = local;
+            } else {
+                ruEnCache = local;
+            }
+            return local;
         }
+    }
+
+    private static List<Word> load(Context context, String filename) {
+        List<Word> loaded = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                context.getAssets().open(filename),
+                StandardCharsets.UTF_8
+        ))) {
+            String line;
+            boolean header = true;
+            while ((line = reader.readLine()) != null) {
+                if (header) {
+                    header = false;
+                    continue;
+                }
+                List<String> fields = parseCsv(line);
+                if (fields.size() < 2) {
+                    continue;
+                }
+                String source = fields.get(0).trim();
+                String translation = fields.get(1).trim();
+                if (!source.isEmpty() && !translation.isEmpty()) {
+                    loaded.add(new Word(source, translation));
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return loaded;
     }
 
     private static List<String> parseCsv(String line) {

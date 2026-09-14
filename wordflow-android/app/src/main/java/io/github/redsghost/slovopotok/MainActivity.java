@@ -2,7 +2,6 @@ package io.github.redsghost.slovopotok;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -99,18 +98,22 @@ public final class MainActivity extends Activity {
         previewDirection.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         previewCard.addView(previewDirection);
 
-        previewPrimary = text("freedom", 30, Color.WHITE);
+        previewPrimary = text("go", 30, Color.WHITE);
         previewPrimary.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         previewPrimary.setPadding(0, dp(8), 0, 0);
         previewCard.addView(previewPrimary);
 
-        previewSecondary = text("свобода", 18, Color.WHITE);
+        previewSecondary = text("идти, ходить; ехать", 18, Color.WHITE);
         previewSecondary.setPadding(0, dp(3), 0, 0);
         previewCard.addView(previewSecondary);
 
         section(content, "Направление");
         directionSpinner = spinner(new String[]{"English → Русский", "Русский → English"});
-        content.addView(directionSpinner, layout(-1, -2, 0, dp(8)));
+        content.addView(directionSpinner, layout(-1, -2, 0, dp(3)));
+        TextView directionNote = caption(
+                "У каждого направления своя база: переводы не разворачиваются."
+        );
+        content.addView(directionNote, layout(-1, -2, 0, dp(8)));
 
         section(content, "Виджет");
         widgetIntervalSpinner = spinner(INTERVAL_LABELS);
@@ -159,8 +162,9 @@ public final class MainActivity extends Activity {
         content.addView(notificationSettings, layout(-1, dp(50), dp(10), 0));
 
         TextView note = text(
-                "Чтобы добавить виджет: удерживайте пустое место на рабочем столе → Виджеты → Словопоток. "
-                        + "Во сне Android может немного сдвигать время обновления. Нажатие на виджет сразу меняет слово.",
+                "Чтобы добавить виджет: удерживайте пустое место на рабочем столе → "
+                        + "Виджеты → Словопоток. Во сне Android может немного сдвигать "
+                        + "время обновления. Нажатие на виджет сразу меняет слово.",
                 14,
                 Color.rgb(94, 89, 101)
         );
@@ -168,8 +172,9 @@ public final class MainActivity extends Activity {
         content.addView(note);
 
         TextView database = text(
-                "База: " + WordRepository.count(this)
-                        + " частотных общеупотребительных пар, полностью офлайн.",
+                "База: " + WordRepository.count(this, true) + " EN→RU и "
+                        + WordRepository.count(this, false)
+                        + " RU→EN карточек, полностью офлайн.",
                 14,
                 Color.rgb(94, 89, 101)
         );
@@ -179,7 +184,10 @@ public final class MainActivity extends Activity {
         source.setOnClickListener(view -> {
             Intent intent = new Intent(
                     Intent.ACTION_VIEW,
-                    Uri.parse("https://github.com/Red-S-Ghost/red-s-ghost.github.io/tree/codex/slovopotok-android/wordflow-android")
+                    Uri.parse(
+                            "https://github.com/Red-S-Ghost/red-s-ghost.github.io/"
+                                    + "tree/codex/slovopotok-android/wordflow-android"
+                    )
             );
             startActivity(intent);
         });
@@ -201,7 +209,9 @@ public final class MainActivity extends Activity {
     }
 
     private void bindPreview() {
-        directionSpinner.setOnItemSelectedListener(new SimpleSelectionListener(this::renderPreview));
+        directionSpinner.setOnItemSelectedListener(
+                new SimpleSelectionListener(this::renderPreview)
+        );
         colorSpinner.setOnItemSelectedListener(new SimpleSelectionListener(this::renderPreview));
         opacitySeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -230,7 +240,9 @@ public final class MainActivity extends Activity {
         int alpha = Math.round(255f * opacity / 100f);
 
         GradientDrawable background = new GradientDrawable();
-        background.setColor(Color.argb(alpha, Color.red(color), Color.green(color), Color.blue(color)));
+        background.setColor(
+                Color.argb(alpha, Color.red(color), Color.green(color), Color.blue(color))
+        );
         background.setCornerRadius(dp(22));
         previewCard.setBackground(background);
 
@@ -238,13 +250,16 @@ public final class MainActivity extends Activity {
         previewPrimary.setTextColor(textColor);
         previewSecondary.setTextColor(textColor);
         previewDirection.setTextColor(Color.argb(
-                185, Color.red(textColor), Color.green(textColor), Color.blue(textColor)
+                185,
+                Color.red(textColor),
+                Color.green(textColor),
+                Color.blue(textColor)
         ));
 
-        Word word = WordRepository.current(this, Prefs.CHANNEL_WIDGET);
         boolean englishFirst = directionSpinner.getSelectedItemPosition() == 0;
-        previewPrimary.setText(word.primary(englishFirst));
-        previewSecondary.setText(word.secondary(englishFirst));
+        Word word = WordRepository.current(this, Prefs.CHANNEL_WIDGET, englishFirst);
+        previewPrimary.setText(word.source);
+        previewSecondary.setText(word.translation);
         previewDirection.setText(englishFirst ? "EN → RU" : "RU → EN");
     }
 
@@ -252,11 +267,15 @@ public final class MainActivity extends Activity {
         int colorPosition = Math.max(0, colorSpinner.getSelectedItemPosition());
         int widgetPosition = Math.max(0, widgetIntervalSpinner.getSelectedItemPosition());
         int notificationPosition = Math.max(
-                0, notificationIntervalSpinner.getSelectedItemPosition()
+                0,
+                notificationIntervalSpinner.getSelectedItemPosition()
         );
 
         SharedPreferences.Editor editor = Prefs.get(this).edit();
-        editor.putBoolean(Prefs.KEY_ENGLISH_FIRST, directionSpinner.getSelectedItemPosition() == 0);
+        editor.putBoolean(
+                Prefs.KEY_ENGLISH_FIRST,
+                directionSpinner.getSelectedItemPosition() == 0
+        );
         editor.putInt(
                 Prefs.KEY_WIDGET_INTERVAL,
                 INTERVALS[Math.min(widgetPosition, INTERVALS.length - 1)]
