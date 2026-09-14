@@ -1,0 +1,65 @@
+name: Build Slovopotok APK
+
+on:
+  push:
+    branches:
+      - codex/slovopotok-android
+    paths:
+      - "wordflow-android/**"
+      - ".github/workflows/build-slovopotok.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: wordflow-android
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Install Android 35
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Prepare offline vocabulary
+        run: python3 scripts/prepare_words.py
+
+      - name: Build debug APK
+        run: gradle --no-daemon --stacktrace assembleDebug
+
+      - name: Package deliverables
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/debug/app-debug.apk dist/Slovopotok-0.1.0.apk
+          sha256sum dist/Slovopotok-0.1.0.apk > dist/SHA256SUMS.txt
+          zip -r dist/Slovopotok-0.1.0-source.zip .             -x ".gradle/*" "app/build/*" "build/*" "dist/*"
+
+      - name: Upload APK and source
+        uses: actions/upload-artifact@v4
+        with:
+          name: slovopotok-0.1.0
+          path: |
+            wordflow-android/dist/Slovopotok-0.1.0.apk
+            wordflow-android/dist/Slovopotok-0.1.0-source.zip
+            wordflow-android/dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
