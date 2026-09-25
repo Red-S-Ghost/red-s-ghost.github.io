@@ -9,7 +9,6 @@
 	#footer {
 		@include vendor('transition', (
 			'transform #{_duration(article)} ease-in-out',
-			'filter #{_duration(article)} ease-in-out',
 			'opacity #{_duration(article)} ease-in-out',
 		));
 		width: 100%;
@@ -27,7 +26,6 @@
 
 		body.is-article-visible & {
 			@include vendor('transform', 'scale(0.95)');
-			@include vendor('filter', 'blur(0.1rem)');
 			opacity: 0;
 		}
 

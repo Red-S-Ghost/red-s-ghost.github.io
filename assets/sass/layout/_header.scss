@@ -12,7 +12,6 @@
 		@include vendor('align-items', 'center');
 		@include vendor('transition', (
 			'transform #{_duration(article)} ease-in-out',
-			'filter #{_duration(article)} ease-in-out',
 			'opacity #{_duration(article)} ease-in-out',
 		));
 		background-image: -moz-radial-gradient(rgba(0,0,0,0.25) 25%, rgba(0,0,0,0) 55%);
@@ -69,15 +68,9 @@
 			max-width: 100%;
 
 			.inner {
-				@include vendor('transition', (
-					'max-height #{_duration(intro)} ease',
-					'padding #{_duration(intro)} ease',
-					'opacity #{_duration(article)} ease-in-out'
-				));
+				@include vendor('transition', 'opacity #{_duration(article)} ease-in-out');
 				@include vendor('transition-delay', '0.25s');
 				padding: 3rem 2rem;
-				max-height: 40rem;
-				overflow: hidden;
 
 				> :last-child {
 					margin-bottom: 0;
@@ -155,7 +148,6 @@
 
 		body.is-article-visible & {
 			@include vendor('transform', 'scale(0.95)');
-			@include vendor('filter', 'blur(0.1rem)');
 			opacity: 0;
 		}
 
@@ -164,13 +156,9 @@
 				opacity: 0;
 			}
 
-			@include vendor('filter', 'blur(0.125rem)');
 
 			.content {
 				.inner {
-					max-height: 0;
-					padding-top: 0;
-					padding-bottom: 0;
 					opacity: 0;
 				}
 			}
